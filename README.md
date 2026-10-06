@@ -46,7 +46,7 @@ something to show.
 
 On the [Agent Red-Team Benchmark](https://github.com/rbrus/agent-redteam-benchmark), against one
 real Microsoft Foundry agent behind Azure's strictest content safety and scored by deterministic
-oracles plus a tool-blind judge, sixi-scanner v0.5.0 was **1st of seven tools on precision (0.452)
+oracles plus a tool-blind judge, sixi-scanner v0.5.1 was **1st of seven tools on precision (0.452)
 and on recall (0.750)**, for $0.46. Its gap is breadth: a fixed set of 21 techniques is a floor, not
 a state of the art. The benchmark is maintained by the scanner's author; the conflict of interest is
 stated there, with every raw finding published.
@@ -78,7 +78,7 @@ A job that treats every non-zero exit as "fix the agent" is wrong about two of t
 | `context` | | JSON file describing the agent; required by `confirm-url` |
 | `confirm-url` / `confirm-model` / `confirm-key` | | Optional model-backed confirmation of each candidate break. Off by default; see [docs/confirm.md](https://github.com/rbrus/sixi-scanner/blob/main/docs/confirm.md) |
 | `timeout-minutes` | `60` | Abort after this long; exits 3 |
-| `version` | `v0.5.0` | The sixi-scanner tag to build, or `latest` |
+| `version` | `v0.5.1` | The sixi-scanner tag to build, or `latest` |
 | `sarif-path` | `sixi.sarif` | |
 | `report-path` | `sixi-report.json` | Full JSON report, transcripts included |
 

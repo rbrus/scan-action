@@ -63,8 +63,8 @@ inputs:
     description: Abort the whole scan after this long. An aborted scan exits 3, never 0.
     default: "60"
   version:
-    description: The sixi-scanner version to build — a tag such as v0.5.0, or latest.
-    default: v0.5.0
+    description: The sixi-scanner version to build — a tag such as v0.5.1, or latest.
+    default: v0.5.1
   sarif-path:
     description: Where to write the SARIF for github/codeql-action/upload-sarif.
     default: sixi.sarif

@@ -16,7 +16,7 @@ if [ "$target" != echo ]; then
   : "${SIXI_URL:?url is required}"
 fi
 fail_on="${SIXI_FAIL_ON:-high}"
-version="${SIXI_VERSION:-v0.5.0}"
+version="${SIXI_VERSION:-v0.5.1}"
 sarif_path="${SIXI_SARIF_PATH:-sixi.sarif}"
 report_path="${SIXI_REPORT_PATH:-sixi-report.json}"
 
@@ -64,7 +64,8 @@ if [ "$status" -ge 2 ]; then
 fi
 
 # The scanner lists a technique that got no answer as untested, not as a pass. When nothing answered at
-# all, the target was never reached: that is exit 2, whatever the scanner's own exit code says.
+# all, the target was never reached: that is exit 2. The scanner exits 2 itself from v0.5.1; this guard
+# covers an older `version`.
 techniques=$(jq '.options.techniques | length' "$report_path")
 untested=$(jq '.no_answer // [] | length' "$report_path")
 if [ "$techniques" -gt 0 ] && [ "$untested" -ge "$techniques" ]; then
