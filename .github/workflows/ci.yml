@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  self-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: shellcheck
+        run: shellcheck action/scan.sh
+
+      # The echo target reflects every probe back, so findings are expected: exit 1 is the pass.
+      - id: echo
+        uses: ./
+        continue-on-error: true
+        with:
+          url: ""
+          target: echo
+
+      - name: expect findings from echo
+        run: |
+          test "${{ steps.echo.outcome }}" = failure
+          test "${{ steps.echo.outputs.findings }}" -gt 0
+          jq -e '.runs[0].results | length > 0' "${{ steps.echo.outputs.sarif-path }}"
+
+      # An unreachable target must never read as clean.
+      - id: unreachable
+        uses: ./
+        continue-on-error: true
+        with:
+          url: http://127.0.0.1:9/v1/chat/completions
+          fail-on: none
+
+      - name: expect unreachable to fail
+        run: test "${{ steps.unreachable.outcome }}" = failure
